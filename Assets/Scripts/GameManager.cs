@@ -322,6 +322,8 @@ public class GameManager : MonoBehaviour
             attacker = p2CurrentlySelected;
         }
 
+        attackerOrigin = Geometry.GridFromPoint(attacker.transform.position);
+
         SetSurvivalLocation(attacker, currentPlayer.playerNumber);
         SetSurvivalLocation(defender, otherPlayer.playerNumber);
 
@@ -334,7 +336,6 @@ public class GameManager : MonoBehaviour
 
         player1TileSelector.EnterState();
         player2TileSelector.EnterState();
-        attackerOrigin = Geometry.GridFromPoint(attacker.transform.position);
         StartCoroutine(SurvivalCountDown());
     }
 
