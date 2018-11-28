@@ -8,17 +8,17 @@ public class MoveSelector : MonoBehaviour
     public GameObject tileHighlightPrefab;
     public GameObject attackLocationPrefab;
     public TileSelector myTileSelector;
-    public TileSelector otherTileSelector;//
+    public TileSelector otherTileSelector;
 
     private GameObject tileHighlight;
     private GameObject movingPiece;
     private List<Vector2Int> moveLocations;
     private List<GameObject> locationHighlights;
-    private bool canMove = true;//
-    private const float ogMoveTime = 0.1f;//
-    private float timeUntilNextMove;//
-    private int previousIndex;//
-    private Player myPlayer;//
+    private bool canMove = true;
+    private const float ogMoveTime = 0.1f;
+    private float timeUntilNextMove;
+    private int previousIndex;
+    private Player myPlayer;
     private Vector2Int previousLocation;
 
     // Use this for initialization
@@ -37,56 +37,56 @@ public class MoveSelector : MonoBehaviour
             return;
         }
 
-        if (myPlayer == GameManager.instance.currentPlayer || GameManager.instance.GameState == GameManager.GameStates.SURVIVAL)
+        if (myPlayer == GameManager.instance.currentPlayer || GameManager.instance.GameState == GameManager.GameStates.CHASE)
         {
-            int playerNumber = myPlayer.playerNumber;//
+            int playerNumber = myPlayer.playerNumber;
 
-            if (canMove && moveLocations.Count > 0)//
-            {//
+            if (canMove && moveLocations.Count > 0)
+            {
                 tileHighlight.SetActive(true);
-                Vector2Int newLocation = GetNewLocation(playerNumber);//
+                Vector2Int newLocation = GetNewLocation(playerNumber);
                 previousLocation = newLocation;
 
-                tileHighlight.transform.position = Geometry.PointFromGrid(newLocation);//
-                GameObject moveHighlight = locationHighlights.Find(q => q.transform.position == Geometry.PointFromGrid(newLocation));//
-                if (moveHighlight.activeSelf)//
-                {//
-                    GameObject deactivatedHighlight = locationHighlights.Find(q => !q.activeSelf);//
-                    if (deactivatedHighlight)//
-                        deactivatedHighlight.SetActive(true);//
-                    moveHighlight.SetActive(false);//
-                }//
+                tileHighlight.transform.position = Geometry.PointFromGrid(newLocation);
+                GameObject moveHighlight = locationHighlights.Find(q => q.transform.position == Geometry.PointFromGrid(newLocation));
+                if (moveHighlight.activeSelf)
+                {
+                    GameObject deactivatedHighlight = locationHighlights.Find(q => !q.activeSelf);
+                    if (deactivatedHighlight)
+                        deactivatedHighlight.SetActive(true);
+                    moveHighlight.SetActive(false);
+                }
+           
+                canMove = false;
+            }
+            else
+            {
+                timeUntilNextMove -= Time.deltaTime;
+                if (timeUntilNextMove <= 0)
+                {
+                    canMove = true;
+                    timeUntilNextMove = ogMoveTime;
+                }
+            }
 
-                canMove = false;//
-            }//
-            else//
-            {//
-                timeUntilNextMove -= Time.deltaTime;//
-                if (timeUntilNextMove <= 0)//
-                {//
-                    canMove = true;//
-                    timeUntilNextMove = ogMoveTime;//
-                }//
-            }//
+            if (Input.GetButtonDown("A" + playerNumber) && moveLocations.Count > 0)
+            {
+                MovePieceTo(previousLocation);
+            }
 
-            if (Input.GetButtonDown("A" + playerNumber) && moveLocations.Count > 0)//
-            {//
-                MovePieceTo(previousLocation);//
-            }//
-
-            if (Input.GetButtonDown("B" + playerNumber))//
-            {//
-                ReturnToSelect();//
-            }//
+            if (Input.GetButtonDown("B" + playerNumber))
+            {
+                ReturnToSelect();
+            }
         }
     }
 
-    public void SetPlayer(Player player)//
+    public void SetPlayer(Player player)
     {
         myPlayer = player;
     }
 
-    private Vector2Int GetNewLocation(int playerNumber)//
+    private Vector2Int GetNewLocation(int playerNumber)
     {
         int xInput = Mathf.RoundToInt(Input.GetAxis("LeftXAxis" + playerNumber));
         int newIndex = Mathf.RoundToInt(Mathf.Repeat(previousIndex + xInput, moveLocations.Count));
@@ -95,7 +95,7 @@ public class MoveSelector : MonoBehaviour
         return moveLocations[newIndex];
     }
 
-    private void MovePieceTo(Vector2Int newLocation)//
+    private void MovePieceTo(Vector2Int newLocation)
     {
         GameObject pieceToCapture = GameManager.instance.PieceAtGrid(newLocation);
         if (pieceToCapture == null)
@@ -106,7 +106,7 @@ public class MoveSelector : MonoBehaviour
                 case GameManager.GameStates.CHESS:
                     ExitState();
                     break;
-                case GameManager.GameStates.SURVIVAL:
+                case GameManager.GameStates.CHASE:
                     ReturnToSelect();
                     break;
                 default:
@@ -118,10 +118,10 @@ public class MoveSelector : MonoBehaviour
             switch (GameManager.instance.GameState)
             {
                 case GameManager.GameStates.CHESS:
-                    GameManager.instance.InitiateSurvival(pieceToCapture);
+                    GameManager.instance.InitiateChase(pieceToCapture);
                     ReturnToSelect();
                     break;
-                case GameManager.GameStates.SURVIVAL:
+                case GameManager.GameStates.CHASE:
                     GameManager.instance.InitiateAttackerWins(pieceToCapture, movingPiece);
                     ExitState();
                     break;
@@ -133,10 +133,10 @@ public class MoveSelector : MonoBehaviour
 
     public void EnterState(GameObject piece)
     {
-        canMove = false;//
+        canMove = false;
         movingPiece = piece;
-        previousIndex = 0;//
-        timeUntilNextMove = ogMoveTime;//
+        previousIndex = 0;
+        timeUntilNextMove = ogMoveTime;
         enabled = true;
         moveLocations = GameManager.instance.MovesForPiece(movingPiece);
         locationHighlights = new List<GameObject>();
@@ -158,7 +158,7 @@ public class MoveSelector : MonoBehaviour
         }
     }
 
-    private void ReturnToSelect(int tileCheck = 0)//
+    private void ReturnToSelect(int tileCheck = 0)
     {
         enabled = false;
         tileHighlight.SetActive(false);

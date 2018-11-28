@@ -56,25 +56,25 @@ public class GameManager : MonoBehaviour
     public Player otherPlayer;
     public bool isGameOver;//
 
-    public TileSelector player1TileSelector;//
-    public MoveSelector player1MoveSelector;//
-    public TileSelector player2TileSelector;//
-    public MoveSelector player2MoveSelector;//
+    public TileSelector player1TileSelector;
+    public MoveSelector player1MoveSelector;
+    public TileSelector player2TileSelector;
+    public MoveSelector player2MoveSelector;
 
-    public GameObject attacker;//
-    public GameObject defender;//
+    public GameObject attacker;
+    public GameObject defender;
 
     private GameObject[,] pieces;
-    private GameObject[,] survivalPieces;//
-    private GameObject[,] chessPieces;//
+    private GameObject[,] chasePieces;
+    private GameObject[,] chessPieces;
     private Player white;
     private Player black;
-    private GameObject p1CurrentlySelected;//
-    private GameObject p2CurrentlySelected;//
-    private GameStates gameState;//
-    private Vector2Int survivalOrigin;//
+    private GameObject p1CurrentlySelected;
+    private GameObject p2CurrentlySelected;
+    private GameStates gameState;
+    private Vector2Int chaseOrigin;
     private Vector2Int attackerOrigin;
-    private int survivalTimer = 10;
+    private int chaseTimer = 10;
 
     public GameStates GameState {
         get {
@@ -84,7 +84,7 @@ public class GameManager : MonoBehaviour
         private set {
             gameState = value;
         }
-    }//
+    }
 
     void Awake()
     {
@@ -94,8 +94,8 @@ public class GameManager : MonoBehaviour
     void Start ()
     {
         pieces = new GameObject[8, 8];
-        survivalPieces = new GameObject[8, 8];//
-        chessPieces = new GameObject[8, 8];//
+        chasePieces = new GameObject[8, 8];
+        chessPieces = new GameObject[8, 8];
 
         white = new Player("white", true);
         black = new Player("black", false);
@@ -104,17 +104,17 @@ public class GameManager : MonoBehaviour
         otherPlayer = black;
 
         isGameOver = false;//
-        player1TileSelector.SetPlayer(currentPlayer);//
-        player1MoveSelector.SetPlayer(currentPlayer);//
-        player2TileSelector.SetPlayer(otherPlayer);//
-        player2MoveSelector.SetPlayer(otherPlayer);//
+        player1TileSelector.SetPlayer(currentPlayer);
+        player1MoveSelector.SetPlayer(currentPlayer);
+        player2TileSelector.SetPlayer(otherPlayer);
+        player2MoveSelector.SetPlayer(otherPlayer);
 
         InitialSetup();
     }
 
     private void InitialSetup()
     {
-        GameState = GameStates.CHESS;//
+        GameState = GameStates.CHESS;
 
         AddPiece(whiteRook, white, 0, 0);
         AddPiece(whiteKnight, white, 1, 0);
@@ -144,10 +144,10 @@ public class GameManager : MonoBehaviour
             AddPiece(blackPawn, black, i, 6);
         }
 
-        SetPieces();//
+        SetPieces();
     }
 
-    private void ToggleActivePieces()//
+    private void ToggleActivePieces()
     {
         foreach(GameObject piece in pieces)
         {
@@ -160,7 +160,7 @@ public class GameManager : MonoBehaviour
     {
         GameObject pieceObject = board.AddPiece(prefab, col, row);
         player.pieces.Add(pieceObject);
-        chessPieces[col, row] = pieceObject;//
+        chessPieces[col, row] = pieceObject;
         Piece newPiece = pieceObject.GetComponent<Piece>();
         newPiece.owner = player;
     }
@@ -184,7 +184,7 @@ public class GameManager : MonoBehaviour
             }
             DeselectPiece(p1CurrentlySelected);
             
-            p1CurrentlySelected = piece;//
+            p1CurrentlySelected = piece;
         }
         else
         {
@@ -194,7 +194,7 @@ public class GameManager : MonoBehaviour
             }
             DeselectPiece(p2CurrentlySelected);
 
-            p2CurrentlySelected = piece;//
+            p2CurrentlySelected = piece;
         }
 
         board.SelectPiece(piece);
@@ -273,7 +273,7 @@ public class GameManager : MonoBehaviour
         locations.RemoveAll(tile => tile.x < 0 || tile.x > 7
             || tile.y < 0 || tile.y > 7);
 
-        if(gameState == GameStates.CHESS)//
+        if(gameState == GameStates.CHESS)
             locations.RemoveAll(tile => FriendlyPieceAt(tile));
 
         return locations;
@@ -301,12 +301,12 @@ public class GameManager : MonoBehaviour
         Destroy(pieceToCapture);
     }
 
-    public void InitiateSurvival(GameObject pieceToCapture)//
+    public void InitiateChase(GameObject pieceToCapture)
     {
-        GameState = GameStates.SURVIVAL;
-        survivalOrigin = Geometry.GridFromPoint(pieceToCapture.transform.position);
+        GameState = GameStates.CHASE;
+        chaseOrigin = Geometry.GridFromPoint(pieceToCapture.transform.position);
         chessPieces = pieces;
-        survivalPieces = new GameObject[8,8];
+        chasePieces = new GameObject[8,8];
 
         //Turn all chess pieces off
         ToggleActivePieces();
@@ -324,8 +324,8 @@ public class GameManager : MonoBehaviour
 
         attackerOrigin = Geometry.GridFromPoint(attacker.transform.position);
 
-        SetSurvivalLocation(attacker, currentPlayer.playerNumber);
-        SetSurvivalLocation(defender, otherPlayer.playerNumber);
+        SetChaseLocation(attacker, currentPlayer.playerNumber);
+        SetChaseLocation(defender, otherPlayer.playerNumber);
 
         SetSurvivalPieces(attacker, defender);
 
@@ -336,16 +336,16 @@ public class GameManager : MonoBehaviour
 
         player1TileSelector.EnterState();
         player2TileSelector.EnterState();
-        StartCoroutine(SurvivalCountDown());
+        StartCoroutine(ChaseCountDown());
     }
 
-    private void SetSurvivalLocation(GameObject piece, int playerNumber)//
+    private void SetChaseLocation(GameObject piece, int playerNumber)
     {
         Vector2Int newPos = new Vector2Int(Random.Range(0, 7), (playerNumber - 1) * 7);
         piece.transform.position = Geometry.PointFromGrid(newPos);
     }
 
-    public void InitiateAttackerWins(GameObject defender, GameObject attacker)//
+    public void InitiateAttackerWins(GameObject defender, GameObject attacker)
     {
         GameState = GameStates.CHESS;
 
@@ -357,10 +357,10 @@ public class GameManager : MonoBehaviour
 
         ToggleActivePieces();
 
-        Move(attacker, survivalOrigin);
+        Move(attacker, chaseOrigin);
     }
 
-    public void InitiateDefenderWins()//
+    public void InitiateDefenderWins()
     {
         GameState = GameStates.CHESS;
 
@@ -371,43 +371,43 @@ public class GameManager : MonoBehaviour
         ToggleActivePieces();
 
         Move(attacker, attackerOrigin);
-        Move(defender, survivalOrigin);
+        Move(defender, chaseOrigin);
     }
 
-    private void SetPieces()//
+    private void SetPieces()
     {
         switch (gameState)
         {
             case GameStates.CHESS:
                 pieces = chessPieces;
                 break;
-            case GameStates.SURVIVAL:
-                pieces =  survivalPieces;
+            case GameStates.CHASE:
+                pieces =  chasePieces;
                 break;
         }
     }
 
-    private void SetSurvivalPieces(GameObject attacker, GameObject defender)//
+    private void SetSurvivalPieces(GameObject attacker, GameObject defender)
     {
         Vector2Int pieceGridPoint = Geometry.GridFromPoint(attacker.transform.position);
-        survivalPieces[pieceGridPoint.x, pieceGridPoint.y] = attacker;
+        chasePieces[pieceGridPoint.x, pieceGridPoint.y] = attacker;
 
         pieceGridPoint = Geometry.GridFromPoint(defender.transform.position);
-        survivalPieces[pieceGridPoint.x, pieceGridPoint.y] = defender;
+        chasePieces[pieceGridPoint.x, pieceGridPoint.y] = defender;
     }
 
-    private IEnumerator SurvivalCountDown()
+    private IEnumerator ChaseCountDown()
     {
-        yield return new WaitForSeconds(survivalTimer);
-        if(GameState == GameStates.SURVIVAL)
+        yield return new WaitForSeconds(chaseTimer);
+        if(GameState == GameStates.CHASE)
         {
             InitiateDefenderWins();
         }
     }
 
-    public enum GameStates//
+    public enum GameStates
     {
         CHESS,
-        SURVIVAL
+        CHASE
     }
 }

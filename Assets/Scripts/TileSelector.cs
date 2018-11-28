@@ -8,11 +8,11 @@ public class TileSelector : MonoBehaviour
     public Vector2Int tileStartingPoint;
 
     private GameObject tileHighlight;
-    private Vector2Int previousLocation;//
-    private bool canMove = true;//
-    private const float ogMoveTime = 0.1f;//
-    private float timeUntilNextMove;//
-    private Player myPlayer;//
+    private Vector2Int previousLocation;
+    private bool canMove = true;
+    private const float ogMoveTime = 0.1f;
+    private float timeUntilNextMove;
+    private Player myPlayer;
 
     // Use this for initialization
     void Start ()
@@ -21,8 +21,8 @@ public class TileSelector : MonoBehaviour
         Vector3 point = Geometry.PointFromGrid(gridpoint);
         tileHighlight = Instantiate(tileHighlightPrefab, point, Quaternion.identity, gameObject.transform);
         tileHighlight.SetActive(false);
-        previousLocation = tileStartingPoint;//
-        timeUntilNextMove = ogMoveTime;//
+        previousLocation = tileStartingPoint;
+        timeUntilNextMove = ogMoveTime;
     }
 	
 	// Update is called once per frame
@@ -33,40 +33,40 @@ public class TileSelector : MonoBehaviour
             return;
         }
 
-        if (myPlayer == GameManager.instance.currentPlayer || GameManager.instance.GameState == GameManager.GameStates.SURVIVAL)
+        if (myPlayer == GameManager.instance.currentPlayer || GameManager.instance.GameState == GameManager.GameStates.CHASE)
         {
             tileHighlight.SetActive(true);
             
-            if (canMove)//
-            {//
-                Vector2Int newLocation = GetNewLocation(myPlayer.playerNumber);//
-                tileHighlight.transform.position = Geometry.PointFromGrid(newLocation);//
-                previousLocation = newLocation;//
+            if (canMove)
+            {
+                Vector2Int newLocation = GetNewLocation(myPlayer.playerNumber);
+                tileHighlight.transform.position = Geometry.PointFromGrid(newLocation);
+                previousLocation = newLocation;
 
-                canMove = false;//
-            }//
-            else//
-            {//
-                timeUntilNextMove -= Time.deltaTime;//
-                if (timeUntilNextMove <= 0)//
-                {//
-                    canMove = true;//
-                    timeUntilNextMove = ogMoveTime;//
-                }//
-            }//
-            if (Input.GetButtonDown("A" + myPlayer.playerNumber))//
-            {//
-                SelectPieceAt(previousLocation);//
-            }//
+                canMove = false;
+            }
+            else
+            {
+                timeUntilNextMove -= Time.deltaTime;
+                if (timeUntilNextMove <= 0)
+                {
+                    canMove = true;
+                    timeUntilNextMove = ogMoveTime;
+                }
+            }
+            if (Input.GetButtonDown("A" + myPlayer.playerNumber))
+            {
+                SelectPieceAt(previousLocation);
+            }
         }
 	}
 
-    public void SetPlayer(Player player)//
+    public void SetPlayer(Player player)
     {
         myPlayer = player;
     }
 
-    private void SelectPieceAt(Vector2Int newLocation)//
+    private void SelectPieceAt(Vector2Int newLocation)
     {
         GameObject selectedPiece = GameManager.instance.PieceAtGrid(newLocation);
         if (GameManager.instance.DoesPieceBelongToCurrentPlayer(selectedPiece, myPlayer))
@@ -76,7 +76,7 @@ public class TileSelector : MonoBehaviour
         }
     }
 
-    private Vector2Int GetNewLocation(int playerNumber)//
+    private Vector2Int GetNewLocation(int playerNumber)
     {
         int xInput = Mathf.RoundToInt(Input.GetAxis("LeftXAxis" + playerNumber));
         int newX = Mathf.RoundToInt(Mathf.Repeat(previousLocation.x + xInput, 8));
